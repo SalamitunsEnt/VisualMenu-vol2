@@ -1,3 +1,7 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -18,7 +22,8 @@ const nextConfig = {
     ],
     domains: [
       'zuajrsvhimnoefuzklry.supabase.co',
-      'restaurantocr.cognitiveservices.azure.com'
+      'restaurantocr.cognitiveservices.azure.com',
+      'your-supabase-project.supabase.co'
     ],
   },
   webpack: (config, { dev, isServer }) => {
@@ -37,6 +42,35 @@ const nextConfig = {
     NEXT_PUBLIC_AZURE_CV_KEY: process.env.NEXT_PUBLIC_AZURE_CV_KEY,
     NEXT_PUBLIC_AZURE_CV_ENDPOINT: process.env.NEXT_PUBLIC_AZURE_CV_ENDPOINT,
   },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin'
+          }
+        ]
+      }
+    ]
+  }
 }
 
-module.exports = nextConfig 
+module.exports = withBundleAnalyzer(nextConfig) 

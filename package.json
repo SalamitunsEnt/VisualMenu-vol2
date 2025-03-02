@@ -9,7 +9,10 @@
     "build:edge": "cd supabase/functions && tsc --noEmit",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "analyze": "ANALYZE=true next build",
+    "deploy:staging": "vercel",
+    "deploy:prod": "vercel --prod"
   },
   "dependencies": {
     "@azure/ai-form-recognizer": "^5.0.0",
@@ -60,6 +63,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.2.0",
     "@types/node": "^20.11.5",
     "@types/sharp": "^0.31.1",
     "autoprefixer": "^10.4.17",

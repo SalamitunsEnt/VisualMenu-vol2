@@ -11,15 +11,16 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
-  deploy:
+  Deploy-to-Vercel:
     runs-on: ubuntu-latest
     
     environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Staging' }}
+      name: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Preview' }}
       url: ${{ steps.deploy.outputs.url }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -27,20 +28,32 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Verify Vercel Credentials
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "Error: VERCEL_TOKEN is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
+            echo "Error: VERCEL_ORG_ID is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "Error: VERCEL_PROJECT_ID is not set"
+            exit 1
+          fi
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Cache Next.js build
-        uses: actions/cache@v3
-        with:
-          path: |
-            .next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
-      - name: Build
-        run: npm run build
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -49,21 +62,15 @@ jobs:
           NEXT_PUBLIC_AZURE_CV_KEY: ${{ secrets.NEXT_PUBLIC_AZURE_CV_KEY }}
           NEXT_PUBLIC_AZURE_CV_ENDPOINT: ${{ secrets.NEXT_PUBLIC_AZURE_CV_ENDPOINT }}
 
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
-
       - name: Deploy to Vercel
         id: deploy
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "Deploying to production..."
-            URL=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})
+            URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
           else
-            echo "Deploying to staging..."
-            URL=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }})
+            echo "Deploying to preview..."
+            URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
           fi
           echo "url=$URL" >> $GITHUB_OUTPUT
 

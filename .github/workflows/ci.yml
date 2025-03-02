@@ -31,6 +31,15 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
     
+    - name: Check for required secrets
+      run: |
+        if [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] || [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ]; then
+          echo "Warning: Some Supabase environment variables are missing. This might affect the build."
+        fi
+        if [ -z "${{ secrets.NEXT_PUBLIC_AZURE_FORM_ENDPOINT }}" ] || [ -z "${{ secrets.NEXT_PUBLIC_AZURE_FORM_KEY }}" ]; then
+          echo "Warning: Some Azure Form environment variables are missing. This might affect the build."
+        fi
+    
     - name: Lint
       run: npm run lint
       
@@ -43,12 +52,12 @@ jobs:
     - name: Build
       run: npm run build
       env:
-        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-        NEXT_PUBLIC_AZURE_FORM_ENDPOINT: ${{ secrets.NEXT_PUBLIC_AZURE_FORM_ENDPOINT }}
-        NEXT_PUBLIC_AZURE_FORM_KEY: ${{ secrets.NEXT_PUBLIC_AZURE_FORM_KEY }}
-        NEXT_PUBLIC_AZURE_CV_KEY: ${{ secrets.NEXT_PUBLIC_AZURE_CV_KEY }}
-        NEXT_PUBLIC_AZURE_CV_ENDPOINT: ${{ secrets.NEXT_PUBLIC_AZURE_CV_ENDPOINT }}
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'dummy-value-for-pr' }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-value-for-pr' }}
+        NEXT_PUBLIC_AZURE_FORM_ENDPOINT: ${{ secrets.NEXT_PUBLIC_AZURE_FORM_ENDPOINT || 'dummy-value-for-pr' }}
+        NEXT_PUBLIC_AZURE_FORM_KEY: ${{ secrets.NEXT_PUBLIC_AZURE_FORM_KEY || 'dummy-value-for-pr' }}
+        NEXT_PUBLIC_AZURE_CV_KEY: ${{ secrets.NEXT_PUBLIC_AZURE_CV_KEY || 'dummy-value-for-pr' }}
+        NEXT_PUBLIC_AZURE_CV_ENDPOINT: ${{ secrets.NEXT_PUBLIC_AZURE_CV_ENDPOINT || 'dummy-value-for-pr' }}
     
     - name: Check bundle size
       run: npm run analyze || true # Remove '|| true' once you set up bundle analysis 
